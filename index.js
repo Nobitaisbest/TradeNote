@@ -7,29 +7,30 @@ const fs = require('fs');
 const Vite = require('vite');
 const MongoClient = require("mongodb").MongoClient;
 
-let databaseURI
+let databaseURI = "mongodb+srv://18:18@mastery.nkxrtwo.mongodb.net/?retryWrites=true&w=majority"
 
-if (process.env.MONGO_URI) {
-    databaseURI = process.env.MONGO_URI
-} else if (process.env.MONGO_ATLAS){
-    databaseURI = "mongodb+srv://"+process.env.MONGO_USER+":"+process.env.MONGO_PASSWORD+"@"+process.env.MONGO_URL+"/"+process.env.TRADENOTE_DATABASE+"?authSource=admin"
-}else{
-    databaseURI = "mongodb://"+process.env.MONGO_USER+":"+process.env.MONGO_PASSWORD+"@"+process.env.MONGO_URL+":"+process.env.MONGO_PORT+"/"+process.env.TRADENOTE_DATABASE+"?authSource=admin"
-}
+// if (process.env.MONGO_URI) {
+//     databaseURI = process.env.MONGO_URI
+// } else if (process.env.MONGO_ATLAS){
+//     databaseURI = "mongodb+srv://"+process.env.MONGO_USER+":"+process.env.MONGO_PASSWORD+"@"+process.env.MONGO_URL+"/"+process.env.TRADENOTE_DATABASE+"?authSource=admin"
+// }else{
+//     databaseURI = "mongodb://"+process.env.MONGO_USER+":"+process.env.MONGO_PASSWORD+"@"+process.env.MONGO_URL+":"+process.env.MONGO_PORT+"/"+process.env.TRADENOTE_DATABASE+"?authSource=admin"
+// }
 
-console.log('databaseURI '+databaseURI)
+console.log('databaseURI '+ databaseURI)
 
 let tradenoteDatabase = process.env.TRADENOTE_DATABASE
 
 var app = express();
 
-const port = process.env.TRADENOTE_PORT;
+const port = 1080;
 const PROXY_PORT = 39482;
-
+let NODE_ENV = "dev";
+let MASTER_KEY = "123456";
 // SERVER
-
+let app_id = process.env.APP_ID || "12345";
 let server = null
-
+console.log(app_id)
 const startIndex = async () => {
 
     const startServer = async () => {
@@ -45,7 +46,7 @@ const startIndex = async () => {
     const runServer = async () => {
         console.log("\nRUNNING SERVER")
         return new Promise(async (resolve, reject) => {
-            if (process.env.NODE_ENV == 'dev') {
+            if (NODE_ENV == 'dev') {
 
                 const Proxy = require('http-proxy');
 
@@ -68,9 +69,9 @@ const startIndex = async () => {
                 resolve()
 
             } else {
-                app.use(express.static('dist'))
+                
                 app.get('*', function (request, response) {
-                    response.sendFile(path.resolve('dist', 'index.html'));
+                    response.sendFile(path.resolve('index.html'));
                 });
                 console.log(" -> Running prod server")
                 resolve()
@@ -83,8 +84,8 @@ const startIndex = async () => {
         return new Promise(async (resolve, reject) => {
             const serv = new ParseServer({
                 databaseURI: databaseURI,
-                appId: process.env.APP_ID,
-                masterKey: process.env.MASTER_KEY,
+                appId: app_id,
+                masterKey: MASTER_KEY,
                 port: port,
                 masterKeyIps: ['0.0.0.0/0', '::/0'],
                 allowClientClassCreation: false,
@@ -117,18 +118,18 @@ const startIndex = async () => {
 
 
     if (process.env.PARSE_DASHBOARD) app.use('/parseDashboard', parseDashboard)
-
+  console.log("master key = " + MASTER_KEY)
     //INIT
     //console.log("\nInitializing Parse")
-    Parse.initialize(process.env.APP_ID)
+    Parse.initialize("12345")
     Parse.serverURL = "http://localhost:" + port + "/parse"
-    Parse.masterKey = process.env.MASTER_KEY
-
+    Parse.masterKey = MASTER_KEY
+  console.log(Parse.masterKey)
     //API
 
     app.post("/parseAppId", (req, res) => {
         //console.log("\nAPI : post APP ID")
-        res.send(process.env.APP_ID)
+        res.send(app_id)
     });
 
     app.post("/posthog", (req, res) => {
